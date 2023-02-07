@@ -95,11 +95,18 @@ mod test {
     #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
     struct Foo {
         s: String,
-        // BigInt is arbitrarily large, so this can overflow.
-        // Dynamo doesn't differentiate between Number and BigInt
+        n_f64: f64,
+        n_f32: f32,
         n_i128: i128,
         n_i64: i64,
         n_i32: i32,
+        n_i16: i16,
+        n_i8: i8,
+        n_u128: u128,
+        n_u64: u64,
+        n_u32: u32,
+        n_u16: u16,
+        n_u8: u8,
     }
 
     #[wasm_bindgen_test]
@@ -109,6 +116,12 @@ mod test {
             "s": { 
                 "S": "Example" 
             },
+            "n_f64": {
+                "N": "1.7976931348623157e308"
+            },
+            "n_f32": {
+                "N": "-3.4028235e38"
+            },
             "n_i128": {
                 "N": "170141183460469231731687303715884105727"
             },
@@ -117,15 +130,45 @@ mod test {
             },
             "n_i32": {
                 "N": "2147483647"
+            },
+            "n_i16": {
+                "N": "-32768"
+            },
+            "n_i8": {
+                "N": "-128"
+            },
+            "n_u128": {
+                "N": "340282366920938463463374607431768211455"
+            },
+            "n_u64": {
+                "N": "0"
+            },
+            "n_u32": {
+                "N": "4294967295"
+            },
+            "n_u16": {
+                "N": "65535"
+            },
+            "n_u8": {
+                "N": "255"
             }
         }"#;
         let js_value = js_sys::JSON::parse(json).unwrap();
 
         let expected = Foo {
             s: "Example".into(),
+            n_f64: f64::MAX,
+            n_f32: f32::MIN,
             n_i128: i128::MAX,
             n_i64: i64::MAX,
             n_i32: i32::MAX,
+            n_i16: i16::MIN,
+            n_i8: i8::MIN,
+            n_u128: u128::MAX,
+            n_u64: u64::MIN,
+            n_u32: u32::MAX,
+            n_u16: u16::MAX,
+            n_u8: u8::MAX,
         };
 
         let actual: Foo = super::from_jsvalue(js_value).unwrap();

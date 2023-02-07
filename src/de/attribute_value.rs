@@ -12,6 +12,99 @@ impl From<JsValue> for Deserializer {
     }
 }
 
+macro_rules! deserialize_from_numeric_attribute_value {
+    ($($func:ident)*) => {
+        $(deserialize_from_numeric_attribute_helper!{$func})*
+    };
+}
+
+macro_rules! deserialize_from_numeric_attribute_helper {
+    (f64) => {
+        deserialize_from_float_numeric_attribute_method! {deserialize_f64<'de, V>()}
+    };
+    (f32) => {
+        deserialize_from_float_numeric_attribute_method! {deserialize_f32<'de, V>()}
+    };
+    (i64) => {
+        deserialize_from_signed_numeric_attribute_method! {deserialize_i64<'de, V>()}
+    };
+    (i32) => {
+        deserialize_from_signed_numeric_attribute_method! {deserialize_i32<'de, V>()}
+    };
+    (i16) => {
+        deserialize_from_signed_numeric_attribute_method! {deserialize_i16<'de, V>()}
+    };
+    (i8) => {
+        deserialize_from_signed_numeric_attribute_method! {deserialize_i8<'de, V>()}
+    };
+    (u64) => {
+        deserialize_from_unsigned_numeric_attribute_method! {deserialize_u64<'de, V>()}
+    };
+    (u32) => {
+        deserialize_from_unsigned_numeric_attribute_method! {deserialize_u32<'de, V>()}
+    };
+    (u16) => {
+        deserialize_from_unsigned_numeric_attribute_method! {deserialize_u16<'de, V>()}
+    };
+    (u8) => {
+        deserialize_from_unsigned_numeric_attribute_method! {deserialize_u8<'de, V>()}
+    };
+}
+
+macro_rules! deserialize_from_signed_numeric_attribute_method {
+    ($func:ident<$l:tt, $v:ident>($($arg:ident : $ty:ty),*)) => {
+        #[inline]
+        fn $func<$v>(self, $($arg: $ty,)* visitor: $v) -> Result<$v::Value, Self::Error>
+        where
+            $v: de::Visitor<$l>,
+        {
+            $(
+                let _ = $arg;
+            )*
+            self.deserialize_from_attribute_value("N", |s| match s.parse::<i64>() {
+                Ok(v) => visitor.visit_i64(v),
+                Err(_) => Err(de::Error::custom("Something went wrong deserializing into numeric"))
+            })
+        }
+    };
+}
+
+macro_rules! deserialize_from_unsigned_numeric_attribute_method {
+    ($func:ident<$l:tt, $v:ident>($($arg:ident : $ty:ty),*)) => {
+        #[inline]
+        fn $func<$v>(self, $($arg: $ty,)* visitor: $v) -> Result<$v::Value, Self::Error>
+        where
+            $v: de::Visitor<$l>,
+        {
+            $(
+                let _ = $arg;
+            )*
+            self.deserialize_from_attribute_value("N", |s| match s.parse::<u64>() {
+                Ok(v) => visitor.visit_u64(v),
+                Err(_) => Err(de::Error::custom("Something went wrong deserializing into numeric"))
+            })
+        }
+    };
+}
+
+macro_rules! deserialize_from_float_numeric_attribute_method {
+    ($func:ident<$l:tt, $v:ident>($($arg:ident : $ty:ty),*)) => {
+        #[inline]
+        fn $func<$v>(self, $($arg: $ty,)* visitor: $v) -> Result<$v::Value, Self::Error>
+        where
+            $v: de::Visitor<$l>,
+        {
+            $(
+                let _ = $arg;
+            )*
+            self.deserialize_from_attribute_value("N", |s| match s.parse::<f64>() {
+                Ok(v) => visitor.visit_f64(v),
+                Err(_) => Err(de::Error::custom("Something went wrong deserializing into numeric"))
+            })
+        }
+    };
+}
+
 impl Deserializer {
     fn deserialize_from_attribute_value<'de, F, V>(
         self,
@@ -52,31 +145,21 @@ impl<'de> de::Deserializer<'de> for Deserializer {
     }
 
     serde::forward_to_deserialize_any! {
-        bool i8 i16 u8 u16 u32 u64 u128 f32 f64 char str
+        bool char str
         bytes byte_buf option unit unit_struct newtype_struct enum identifier
         tuple seq map tuple_struct ignored_any struct
     }
 
-    fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-    where
-        V: de::Visitor<'de>,
-    {
-        self.deserialize_from_attribute_value("N", |s| match s.parse::<i32>() {
-            Ok(v) => visitor.visit_i32(v),
-            Err(_) => Err(de::Error::custom(
-                "Couldn't deserialize i32 from a BigInt outside i32::MIN..i32::MAX bounds",
-            )),
-        })
-    }
+    deserialize_from_numeric_attribute_value! { u8 u16 u32 u64 i8 i16 i32 i64 f32 f64 }
 
-    fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_u128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: de::Visitor<'de>,
     {
-        self.deserialize_from_attribute_value("N", |s| match s.parse::<i64>() {
-            Ok(v) => visitor.visit_i64(v),
+        self.deserialize_from_attribute_value("N", |s| match s.parse::<u128>() {
+            Ok(v) => visitor.visit_u128(v),
             Err(_) => Err(de::Error::custom(
-                "Couldn't deserialize i64 from a BigInt outside i64::MIN..i64::MAX bounds",
+                "Couldn't deserialize u128 from a BigInt outside u128::MIN..u128::MAX bounds",
             )),
         })
     }
