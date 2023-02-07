@@ -99,6 +99,7 @@ mod test {
         // Dynamo doesn't differentiate between Number and BigInt
         n_i128: i128,
         n_i64: i64,
+        n_i32: i32,
     }
 
     #[wasm_bindgen_test]
@@ -113,6 +114,9 @@ mod test {
             },
             "n_i64": {
                 "N": "9223372036854775807"
+            },
+            "n_i32": {
+                "N": "2147483647"
             }
         }"#;
         let js_value = js_sys::JSON::parse(json).unwrap();
@@ -121,6 +125,7 @@ mod test {
             s: "Example".into(),
             n_i128: i128::MAX,
             n_i64: i64::MAX,
+            n_i32: i32::MAX,
         };
 
         let actual: Foo = super::from_jsvalue(js_value).unwrap();
